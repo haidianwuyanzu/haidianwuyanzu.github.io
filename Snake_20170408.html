@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <title>贪吃蛇</title>
+  <meta charset="UTF-8">
+  <meta name="Author" content="wuzhenlin">
+  <meta name="Keywords" content="吴震霖">
+  <meta name="Description" content="">
+  <style type="text/css">
+	/*标签名字直接指定样式*/
+	body{background: #B5EEB9;font-family:"楷体"}
+	/*给所有class=box的标签添加样式，盒子模型*/
+	.box{
+		width:680px;
+		height:680px;
+		border:1px solid red;  /*加边框*/
+		margin:0px auto;     /*盒子居中，上下不设置，左右自动*/
+		box-shadow:2px 2px 5px 1px #000;  /*第4个参数放大、缩小*/
+		text-align:center;
+		//button-align:center;
+	}
+	h1{
+	text-align:center;
+	text-shadow:2px 2px 5px #000;   /*第3个参数表示阴影的模糊度*/
+	color:#fff;
+	}  /*标题文本居中*/
+	.Font1{
+		font-family:"黑体";
+		/*font-size = 30;
+		color = "blue";*/
+	}
+  </style>
+	
+ </head>
+ <body>
+	<!----游戏界面 start----->
+	<div class="box" style="button-align:down;">
+		<h1>
+			欢迎来到老吴家小试牛刀之贪吃蛇！
+		</h1>
+		<!---画布 start---->
+		<canvas id="mycanvas" width=450 height=450 
+		style="background: #57C21B"></canvas>
+		<input id="start" type = "button" value = "开始游戏" style="width:100px;height:50px" class="Font1"/>
+		<input id="pause" type = "button" value = "暂停游戏" style="width:100px;height:50px" class="Font1"/>
+		<!---画布 end---->
+	</div>
+	<audio src="bg.mp3" id="bg"></audio>
+	<audio src="eat.mp3" id="eat"></audio>
+	<audio src="hit.mp3" id="hit"></audio>
+	<audio src="GameOver.mp3" id="dead"></audio>	
+	<!----游戏界面 end----->
+	<script type="text/javascript">
+	/*1.html:人的基本属性  2.css:美化装饰 
+	  3.script:脚本，代表功能  javascript 驼峰命名法
+	  取别名*/
+	  //拿到canvas标签的对象
+		var canvas = document.getElementById("mycanvas");
+		//拿到画图工具
+		var ctx = canvas.getContext("2d");
+		//假定格子15*15   450/15=30个	
+		ctx.strokeStyle = "red";	
+		var elem=document.getElementById("start");//获取控件
+		elem.style.position = "absolute";//设置绝对定位（或者相对定位）
+		elem.style.left = "350px";//设置left数值
+		elem.style.top = "600px";//设置top数值
+		var elem=document.getElementById("pause");//获取控件
+		elem.style.position = "absolute";//设置绝对定位（或者相对定位）
+		elem.style.left = "600px";//设置left数值
+		elem.style.top = "600px";//设置top数值
+//==================================================================================
+		var start = window.confirm("开始游戏吗？");
+		function $(id){return document.getElementById(id);}
+		/*$("start").onclick = function(){
+			alert("开始游戏啦！");*/
+		/*window.onload=function(){
+			var o_btn=document.getElementById("start");
+			o_btn.addEventListener("click",function(){
+				alert("开始游戏啦！");});//,false);   }*/
+		//if($("start").onclick==true){
+		//function set(thisurl){
+		if(start==true){		
+			document.getElementById("bg").play();
+			for(var i = 0; i < 30; i++){
+				ctx.beginPath();   //开始一条路径
+				ctx.moveTo(0, i*15);  
+				ctx.lineTo(450, i*15);
+				ctx.closePath();
+				//绘制已经定义的路线
+				ctx.stroke();
+			}
+			for(var i = 0; i < 30; i++){
+				ctx.beginPath();   //开始一条路径
+				ctx.moveTo(i*15, 0);  
+				ctx.lineTo(i*15, 450);
+				ctx.closePath();
+				//绘制已经定义的路线
+				ctx.stroke();
+			}
+			/*1.边框设计  2.蛇体  3.食物体  4.蛇动  5.蛇吃食物  6.判断死亡*/
+			function Cell(x, y, f){   //f代表方向
+				//this代表当前对象，
+				this.x = x;
+				this.y = y;
+				this.f = f;   
+			}
+			//食物的模板
+			function Food(x, y){
+				this.x = x;
+				this.y = y;
+			}
+			//蛇的对象
+			var snake = [];
+			var width = 15;
+			var head;
+			var food = new Food(15, 15);
+			var speed = 300;
+			for(var i = 0; i < 5; i++){
+				snake[i] = new Cell(i, 0 ,-2);
+			}
+			function drawSnake(){
+				ctx.clearRect(0, 0, 450, 450);   //=======================
+				//将蛇身画出，填充
+				for(var i = 0; i < snake.length; i++){
+					ctx.fillStyle = "black";
+					if(i==snake.length-1){
+						ctx.fillStyle = "red";
+					}
+					ctx.beginPath();
+					ctx.rect(snake[i].x * 15, snake[i].y * 15, width, width);
+					ctx.closePath();
+					ctx.fill();
+				}
+				//判断是否吃到食物，这里head需要初始化
+				head = snake[snake.length-1];
+				if(head.x == food.x&&head.y == food.y){
+					document.getElementById("eat").play();  //=========================
+					var newCell = new Cell(head.x, head.y, head.f);
+					switch(head.f){
+						case 1: newCell.y--; break;
+						case -1: newCell.y++; break;
+						case 2: newCell.x--; break;
+						case -2: newCell.x++; break;
+					}
+					snake[snake.length] = newCell;
+					initFood();
+					if(speed > 200){
+						speed = speed - 10;
+					}
+				}
+				head = snake[snake.length-1];   //更新，取出蛇头
+				drawFood();  //保证食物不会丢
+			}		
+			//画食物
+			function drawFood(){
+				ctx.fillStyle = "green";
+				ctx.beginPath();
+				ctx.rect(food.x * 15, food.y * 15, width, width);
+				ctx.closePath();
+				ctx.fill();
+			}
+			//调用
+			drawSnake();
+			//随机生成食物
+			function initFood(){
+				var x = Math.ceil(Math.random() * 28) + 1;
+				var y = Math.ceil(Math.random() * 28) + 1;
+				food.x = x;
+				food.y = y;
+				for(var i = 0; i < snake.length; i++){
+					//食物生成到了蛇身上
+					if(snake[i].x==x&&snake[i].y==y)
+						initFood();
+				}
+			}
+			//根据监听键盘事件
+			document.onkeydown = function(e){
+				var code = e.keyCode;
+				//左37  右39  上38  下40
+				var direction = 0;   
+				switch(code){
+					case 38: direction = 1; break;
+					case 39: direction = -2; break;
+					case 40: direction = -1; break;
+					case 37: direction = 2; break;
+				}
+				//当方向确定的时候
+				if(direction!=0){
+					if(parseInt(head.f)+direction!=0){
+						moveSnake(direction);
+					}
+				}
+			}
+			//移动蛇的方法
+			function moveSnake(direction){
+				//var newCell = head; 这只是一个引用！
+				var newCell = new Cell(head.x, head.y, head.f); 
+				newCell.f = direction;
+				//循环蛇身，将蛇的单元格往前移动，把尾部（下标为0的）丢弃
+				var newSnake = [];
+				for(var i = 1; i < snake.length; i++){
+					newSnake[i-1] = snake[i];
+				}	
+				switch(direction){
+					case 1: newCell.y--; break;
+					case -1: newCell.y++; break;
+					case 2: newCell.x--; break;
+					case -2: newCell.x++; break;
+				}
+				newSnake[newSnake.length] = newCell;
+				snake = newSnake;
+				head = snake[snake.length-1];
+				if(isGameOver()){
+					drawSnake();
+				}
+			}
+			//判断是否游戏结束
+			function isGameOver(){
+				//超出边框
+				if(head.x>=30 || head.x<0 || head.y>=30 || head.y<0){
+					document.getElementById("bg").pause();
+					document.getElementById("hit").play();
+					alert("Game Over");
+					var reset = window.confirm("重新开始游戏吗？");
+					if(reset==true){
+						window.location.reload();  //重新读取，游戏结束！ 
+					}else if(window.confirm("您确定关闭本页面吗？")){
+							document.write("该网页游戏已关闭！");
+							window.close();
+					}else{
+						window.location.reload();  	
+					}			
+				}
+				//咬到自己
+				for(var i = 0; i < snake.length-1; i++){
+					if(head.x==snake[i].x&&head.y==snake[i].y){
+						document.getElementById("bg").pause();
+						document.getElementById("dead").play();
+						alert("Game Over");
+						var reset = window.confirm("重新开始游戏吗？");
+						if(reset==true){
+							window.location.reload();  
+						}else if(window.confirm("您确定关闭本页面吗？")){
+							document.write("该网页游戏已关闭！");
+							window.close();
+						}else{
+							window.location.reload();  	
+						}			
+					}
+				}
+				return true;
+			}
+			function moveCell(){
+				moveSnake(head.f);
+				setTimeout("moveCell()", speed);
+			}
+			moveCell();
+		}
+	</script>
+	  <a href="#" onclick="set()" style="width:50px;height:50px">开始游戏</a>
+ </body>
+</html>
